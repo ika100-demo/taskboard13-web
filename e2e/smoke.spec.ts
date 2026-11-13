@@ -9,7 +9,8 @@ test.skip(!process.env.SMOKE_BASE_URL, "SMOKE_BASE_URL not set");
 
 test("the root page loads at the base URL @smoke", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Task board" })).toBeVisible();
+  await expect(page.getByText("Tasks could not be loaded. Please try again.")).toHaveCount(0);
 });
 
 test("the start page lists the tasks or says there are none @smoke", async ({ page }) => {

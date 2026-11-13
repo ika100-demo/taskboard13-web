@@ -398,6 +398,107 @@ main {
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
 }
 
+/* ---------- task board ---------- */
+
+.board {
+  display: grid;
+  gap: var(--s-6);
+  justify-items: start;
+  padding-block: var(--s-12);
+  min-width: 0;
+}
+
+.board > * {
+  max-width: 100%;
+}
+
+.board form {
+  display: grid;
+  gap: var(--s-2);
+  width: 100%;
+  padding: var(--s-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.board label {
+  font-weight: 600;
+}
+
+.board input {
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.board input[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+.board form button {
+  justify-self: start;
+  min-height: 2.75rem;
+  margin-top: var(--s-2);
+  padding: var(--s-2) var(--s-6);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board form button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+#title-error,
+.board [role="alert"] {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.board-alert {
+  padding: var(--s-4);
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-sm);
+}
+
+.board ul {
+  display: grid;
+  gap: var(--s-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.board li time,
+.board li span + span {
+  color: var(--muted);
+}
+
 /* ---------- empty / error states ---------- */
 
 .state {

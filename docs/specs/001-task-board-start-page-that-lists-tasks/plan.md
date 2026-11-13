@@ -31,6 +31,7 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.8]
     parallel_safe: true
     depends_on: [t1, t2, t3]
+    done: true
 ---
 
 # Plan — 001 Task board start page that lists tasks and adds a task through the Task API

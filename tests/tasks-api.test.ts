@@ -67,7 +67,7 @@ describe("Task API client and server action", () => {
     const { createTaskAction } = await import("@/app/actions");
     const result = await createTaskAction({ title: "Buy milk", due_date: null });
     expect(result.status).toBe("title_invalid");
-    expect((result as { message: string }).message).toBeTruthy();
+    expect(result).toEqual({ status: "title_invalid", message: "The title was not accepted. Please check it." });
   });
 
   it.each([
@@ -83,10 +83,48 @@ describe("Task API client and server action", () => {
     expect(await createTask({ title: "Buy milk", due_date: null })).toEqual({ status: "failed" });
   });
 
-  it("AC-001.8 every call carries a 5 second timeout signal and listTasks fails on a timeout", async () => {
-    fetchMock.mockRejectedValue(new DOMException("timed out", "TimeoutError"));
+  // A fetch that never answers and only ends when its signal aborts. AbortSignal.timeout runs on a
+  // timer fake timers do not control, so it is replaced by a signal that the fake clock aborts.
+  async function exerciseTimeout(call: () => Promise<unknown>, expected: unknown) {
+    vi.spyOn(AbortSignal, "timeout").mockImplementation((ms: number) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException("timed out", "TimeoutError")), ms);
+      return controller.signal;
+    });
+    fetchMock.mockImplementation(
+      (_url: unknown, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener("abort", () => reject(init.signal.reason));
+        }),
+    );
+    vi.useFakeTimers();
+    try {
+      let settled: unknown;
+      const pending = call().then((value) => {
+        settled = value;
+      });
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(settled).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      expect(settled).toEqual(expected);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const init = fetchMock.mock.calls[0][1];
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      expect(init.signal.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    }
+  }
+
+  it("AC-001.8 listTasks gives up at 5000 ms and not before", async () => {
     const { listTasks } = await import("@/lib/tasks-api");
-    expect(await listTasks()).toEqual({ ok: false });
-    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    await exerciseTimeout(() => listTasks(), { ok: false });
+  });
+
+  it("AC-001.8 createTask gives up at 5000 ms and not before", async () => {
+    const { createTask } = await import("@/lib/tasks-api");
+    await exerciseTimeout(() => createTask({ title: "Buy milk", due_date: null }), { status: "failed" });
   });
 });

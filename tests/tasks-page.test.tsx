@@ -67,12 +67,45 @@ describe("start page", () => {
     ["the API answers 503", () => fetchMock.mockResolvedValue(jsonResponse({ error: "db down" }, 503))],
     ["the API answers an unlisted status", () => fetchMock.mockResolvedValue(jsonResponse([], 418))],
     ["the API answers a malformed body", () => fetchMock.mockResolvedValue(new Response("not json", { status: 200 }))],
-    ["the API times out", () => fetchMock.mockRejectedValue(new DOMException("timed out", "TimeoutError"))],
   ])("AC-001.8 shows the load error instead of a list when %s", async (_name, arrange) => {
     arrange();
     await renderPage();
     expect(screen.getByRole("alert")).toHaveTextContent("Tasks could not be loaded. Please try again.");
     expect(screen.queryByRole("list", { name: "Tasks" })).not.toBeInTheDocument();
     expect(screen.queryByText("No tasks yet")).not.toBeInTheDocument();
+  });
+
+  it("AC-001.8 shows the load error once the API has been silent for 5000 ms, not before", async () => {
+    const { default: HomePage } = await import("@/app/page");
+    // AbortSignal.timeout runs on a timer fake timers do not control: use a signal the fake clock aborts.
+    vi.spyOn(AbortSignal, "timeout").mockImplementation((ms: number) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException("timed out", "TimeoutError")), ms);
+      return controller.signal;
+    });
+    fetchMock.mockImplementation(
+      (_url: unknown, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener("abort", () => reject(init.signal.reason));
+        }),
+    );
+    vi.useFakeTimers();
+    try {
+      let element: Awaited<ReturnType<typeof HomePage>> | undefined;
+      const pending = HomePage().then((value) => {
+        element = value;
+      });
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(element).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      await pending;
+      vi.useRealTimers();
+      render(element);
+    } finally {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    }
+    expect(screen.getByRole("alert")).toHaveTextContent("Tasks could not be loaded. Please try again.");
+    expect(screen.queryByRole("list", { name: "Tasks" })).not.toBeInTheDocument();
   });
 });

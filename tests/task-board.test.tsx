@@ -18,7 +18,13 @@ async function renderBoard(initialTasks: Task[] = []) {
   };
 }
 
-const existing: Task[] = [{ id: "a1", title: "Existing", due_date: "2026-01-02" }];
+function expectErrorBoundToTitle(error: HTMLElement, title: HTMLInputElement) {
+  expect(title).toHaveAttribute("aria-describedby", "title-error");
+  expect(title).toHaveAttribute("aria-invalid", "true");
+  expect(error.id).toBe("title-error");
+}
+
+const existing: Task[] =[{ id: "a1", title: "Existing", due_date: "2026-01-02" }];
 
 describe("task board form", () => {
   beforeEach(() => {
@@ -31,6 +37,7 @@ describe("task board form", () => {
       task: { id: "n1", title: "Buy milk", due_date: "2026-12-01" },
     });
     const { title, due, submit } = await renderBoard(existing);
+    expect(due).toHaveAttribute("type", "date");
     fireEvent.change(title, { target: { value: "Buy milk" } });
     fireEvent.change(due, { target: { value: "2026-12-01" } });
     submit();
@@ -76,7 +83,7 @@ describe("task board form", () => {
     fireEvent.change(due, { target: { value: "2026-12-01" } });
     submit();
     const error = await screen.findByText(message);
-    expect(error.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expectErrorBoundToTitle(error, title);
     expect(createTaskAction).not.toHaveBeenCalled();
     expect(title.value).toBe(value);
     expect(due.value).toBe("2026-12-01");
@@ -98,7 +105,7 @@ describe("task board form", () => {
     fireEvent.change(due, { target: { value: "2026-12-01" } });
     submit();
     const error = await screen.findByText("The title was not accepted. Please check it.");
-    expect(error.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expectErrorBoundToTitle(error, title);
     expect(title.value).toBe("Buy milk");
     expect(due.value).toBe("2026-12-01");
     expect(within(screen.getByRole("list", { name: "Tasks" })).getAllByRole("listitem")).toHaveLength(1);

@@ -10,12 +10,14 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.4, AC-001.5, AC-001.7, AC-001.8]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t2
     title: Add shared title validation and UI messages
     files: [lib/task-validation.ts]
     covers: [AC-001.6, AC-001.7, AC-001.8]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t3
     title: Add the create Server Action and the TaskBoard client component
     files: [app/actions.ts, app/_components/task-board.tsx]
